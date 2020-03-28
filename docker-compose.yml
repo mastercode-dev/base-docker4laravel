@@ -1,0 +1,107 @@
+version: '2'
+
+networks:
+    app-tier:
+        driver: bridge
+
+volumes:
+    postgresql:
+        driver: local
+    redis:
+        driver: local
+    mongo:
+        driver: local
+
+services:
+    nginx:
+        image: 'bitnami/nginx:1.16-debian-10'
+        depends_on:
+            - php-fpm
+        networks:
+            - app-tier
+        ports:
+            - '80:8080'
+            - '443:8443'
+        volumes:
+            - ./nginx/app.conf:/opt/bitnami/nginx/conf/server_blocks/app.conf:ro
+            - ${APP_CODE_PATH}:/app
+
+    php-fpm:
+        build:
+            context: ./php-fpm
+            args:
+                - LOCALE=${PHP_FPM_DEFAULT_LOCALE}
+                - ADDITIONAL_LOCALES=${PHP_FPM_ADDITIONAL_LOCALES}
+        networks:
+            - app-tier
+        volumes:
+            - ./php-fpm/app.ini:/usr/local/etc/php/conf.d/app.ini
+            - ./php-fpm/supervisord.conf:/etc/supervisor/supervisord.conf
+            - ./php-fpm/supervisord.d:/etc/supervisor/conf.d
+            - ${APP_CODE_PATH}:/app
+
+    postgresql:
+        image: 'bitnami/postgresql:12-debian-10'
+        ports:
+            - 54321:5432
+        networks:
+            - app-tier
+        volumes:
+            - postgresql:/bitnami/postgresql
+        environment:
+            - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
+            - POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME}
+            - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+
+    redis:
+        image: 'bitnami/redis:5.0-debian-10'
+        networks:
+            - app-tier
+        volumes:
+            - redis:/bitnami/redis/data
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+    mongo:
+        image: 'mongo:3'
+        networks:
+            - app-tier
+        ports:
+            - 8081:8081
+
+    elasticsearch:
+        image: 'docker.elastic.co/elasticsearch/elasticsearch-oss:6.8.5'
+        networks:
+            - app-tier
+        environment:
+            - http.host=0.0.0.0
+            - transport.host=localhost
+            - network.host=0.0.0.0
+            - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
+        mem_limit: 1g
+
+    graylog:
+        image: 'graylog/graylog:3.2'
+        ports:
+            # Graylog web interface and REST API
+            - 9000:9000
+            # Syslog TCP
+            - 1514:1514
+            # Syslog UDP
+            - 1514:1514/udp
+            # GELF TCP
+            - 12201:12201
+            # GELF UDP
+            - 12201:12201/udp
+        environment:
+            - GRAYLOG_ROOT_PASSWORD_SHA2=${GRAYLOG_ROOT_PASSWORD_SHA2}
+            - GRAYLOG_HTTP_EXTERNAL_URI=http://${APP_URL}:9000/
+        networks:
+            - app-tier
+        depends_on:
+            - mongo
+            - elasticsearch

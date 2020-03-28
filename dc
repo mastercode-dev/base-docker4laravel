@@ -1,0 +1,7 @@
+if test "$1" = 'up'; then
+    docker-compose up -d
+elif test "$1" = 'sh'; then
+    docker-compose exec php-fpm bash
+elif test "$1" = 'stop'; then
+    docker-compose stop
+fi

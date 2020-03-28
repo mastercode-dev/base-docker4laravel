@@ -1,0 +1,24 @@
+COMPOSE_PROJECT_NAME=mastercode
+
+# Path where the source code is located in the host
+APP_CODE_PATH=../
+
+# Application URL
+APP_URL=mastercode.test
+
+# PostgreSQL
+POSTGRESQL_DATABASE=events
+POSTGRESQL_USERNAME=events
+POSTGRESQL_PASSWORD=password123
+
+# Redis
+REDIS_PASSWORD=password123
+
+# PHP-FPM
+PHP_FPM_DEFAULT_LOCALE=POSIX
+PHP_FPM_ADDITIONAL_LOCALES="en_US.UTF-8 es_ES.UTF-8 fr_FR.UTF-8"
+
+# Graylog
+GRAYLOG_ROOT_USER=admin
+GRAYLOG_ROOT_PASSWORD=admin
+GRAYLOG_ROOT_PASSWORD_SHA2=8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
